@@ -68,15 +68,26 @@ builder.Services.AddSwaggerGen(options =>
 // CORS
 // =====================================================
 
-var allowedOrigins =
+var allowedOriginsFromArray =
     builder.Configuration
         .GetSection("Cors:AllowedOrigins")
         .Get<string[]>()
-    ??
-    new[]
-    {
-        "http://localhost:5173"
-    };
+    ?? Array.Empty<string>();
+
+var allowedOriginsFromCsv =
+    (builder.Configuration["Cors:AllowedOriginsCsv"] ?? string.Empty)
+        .Split(
+            ',',
+            StringSplitOptions.RemoveEmptyEntries |
+            StringSplitOptions.TrimEntries
+        );
+
+var allowedOrigins =
+    allowedOriginsFromArray
+        .Concat(allowedOriginsFromCsv)
+        .DefaultIfEmpty("http://localhost:5173")
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
 
 builder.Services.AddCors(options =>
 {
